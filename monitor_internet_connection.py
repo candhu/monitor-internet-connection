@@ -94,6 +94,18 @@ def parse_args(args=sys.argv[1:]):
 
 
 
+def is_alive(host, port, timeout):
+    try:
+        socket.setdefaulttimeout(timeout)
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+    except OSError as error:
+        # print(error.strerror)
+        return False
+    else:
+        s.close()
+        return True
+
 def is_internet_alive(host="8.8.8.8", port=53, timeout=3):
     """Check if Internet Connection is alive and external IP address is reachable.
 
@@ -106,18 +118,15 @@ def is_internet_alive(host="8.8.8.8", port=53, timeout=3):
         True (Boolean) if external IP address is reachable.
         False (Boolean) if external IP address is unreachable.
     """
-
-    try:
-        socket.setdefaulttimeout(timeout)
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((host, port))
-    except OSError as error:
-        # print(error.strerror)
-        return False
-    else:
-        s.close()
+    if is_alive(host, port, timeout):
         return True
-
+    else:
+        # Check again to be sure (after 0.5s) to cater for 0s downtime messages
+        time.sleep(0.5)
+        if is_alive(host, port, timeout):
+            return True
+        else:
+            return False
 
 def calc_time_diff(start, end):
     """ Calculate duration between two times and return as HH:MM:SS
